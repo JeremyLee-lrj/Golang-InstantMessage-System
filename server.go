@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
@@ -46,11 +47,34 @@ func (server *Server) BroadCast(user *User, msg string) {
 func (server *Server) Handler(conn net.Conn) {
 	// fmt.Println("Successfully connect")
 	user := NewUser(conn)
+
+	// add user into OnlineMap
 	server.myLock.Lock()
 	server.OnlineMap[user.Name] = user
 	server.myLock.Unlock()
 
 	server.BroadCast(user, "Online")
+
+	// receive message from client
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, err := conn.Read(buf)
+			if n == 0 {
+				server.BroadCast(user, "Offline")
+				return
+			}
+
+			if err != nil && err != io.EOF {
+				fmt.Println("Conn Read error:", err)
+				return
+			}
+
+			msg := string(buf[:n-1])
+
+			server.BroadCast(user, msg)
+		}
+	}()
 }
 
 func (server *Server) Start() {

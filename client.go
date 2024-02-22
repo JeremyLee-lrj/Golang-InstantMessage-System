@@ -17,7 +17,7 @@ func NewUser(conn net.Conn) *User {
 		C:    make(chan string),
 		conn: conn,
 	}
-
+	// listen user's channel
 	go user.ListenMessage()
 	return user
 }
