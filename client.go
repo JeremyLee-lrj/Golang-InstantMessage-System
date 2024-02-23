@@ -57,6 +57,7 @@ func (user *User) DoMessage(msg string) {
 		}
 		user.server.myLock.Unlock()
 	} else if len(msg) > 7 && msg[:7] == "rename|" {
+		// Message format: rename|newname
 		newName := strings.Split(msg, "|")[1]
 		// Check if newName is existing
 		_, ok := user.server.OnlineMap[newName]
@@ -69,6 +70,27 @@ func (user *User) DoMessage(msg string) {
 			user.server.myLock.Unlock()
 			user.Name = newName
 			user.SendMsg("Rename to " + newName + " successfully!\n")
+		}
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+		// Message format： to|somebody|message content
+		contents := strings.Split(msg, "|")
+		remoteName := contents[1]
+		if remoteName == "" {
+			user.SendMsg("Wrong format! Please use format like this: to|somebody|information\n")
+			return
+		} else {
+			remoteUser, ok := user.server.OnlineMap[remoteName]
+			if !ok {
+				user.SendMsg("User is no existing!\n")
+				return
+			}
+
+			message := contents[2]
+			if message == "" {
+				user.SendMsg("No information, please resend\n")
+			} else {
+				remoteUser.SendMsg(user.Name + ": " + message + "\n")
+			}
 		}
 	} else {
 		user.server.BroadCast(user, msg)

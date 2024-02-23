@@ -79,7 +79,7 @@ func (server *Server) Handler(conn net.Conn) {
 		select {
 		case <-isLive:
 
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * 100):
 			user.SendMsg("You're out because of timeout!\n")
 			close(user.C)
 			conn.Close()
