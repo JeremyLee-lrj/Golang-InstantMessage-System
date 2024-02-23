@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"runtime"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -44,13 +46,14 @@ func (server *Server) BroadCast(user *User, msg string) {
 	sendMessage := fmt.Sprintf("[%s]%s: %s", user.Addr, user.Name, msg)
 	server.Message <- sendMessage
 }
+
 func (server *Server) Handler(conn net.Conn) {
 	// fmt.Println("Successfully connect")
 	user := NewUser(conn, server)
 
 	// add user into OnlineMap
 	user.Online()
-
+	isLive := make(chan bool)
 	// receive message from client
 	go func() {
 		buf := make([]byte, 4096)
@@ -68,8 +71,22 @@ func (server *Server) Handler(conn net.Conn) {
 
 			msg := string(buf[:n-1])
 			user.DoMessage(msg)
+			isLive <- true
 		}
 	}()
+
+	for {
+		select {
+		case <-isLive:
+
+		case <-time.After(time.Second * 10):
+			user.SendMsg("You're out because of timeout!\n")
+			close(user.C)
+			conn.Close()
+
+			runtime.Goexit()
+		}
+	}
 }
 
 func (server *Server) Start() {
