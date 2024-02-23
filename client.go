@@ -23,6 +23,7 @@ func NewUser(conn net.Conn, server *Server) *User {
 	go user.ListenMessage()
 	return user
 }
+
 func (user *User) Online() {
 	user.server.myLock.Lock()
 	user.server.OnlineMap[user.Name] = user
@@ -39,9 +40,24 @@ func (user *User) Offline() {
 	user.server.BroadCast(user, "Offline")
 }
 
-func (user *User) DoMessage(msg string) {
-	user.server.BroadCast(user, msg)
+func (user *User) SendMsg(msg string) {
+	user.conn.Write([]byte(msg))
 }
+
+func (user *User) DoMessage(msg string) {
+	if msg == "who" {
+		// Query all online users
+		user.server.myLock.Lock()
+		for _, onlineuser := range user.server.OnlineMap {
+			onlineMsg := "[" + onlineuser.Addr + "]" + onlineuser.Name + ": Online\n"
+			user.SendMsg(onlineMsg)
+		}
+		user.server.myLock.Unlock()
+	} else {
+		user.server.BroadCast(user, msg)
+	}
+}
+
 func (user *User) ListenMessage() {
 	for {
 		msg := <-user.C
