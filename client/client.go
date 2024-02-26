@@ -150,15 +150,20 @@ func (client *Client) Run() {
 
 var serverIp string
 var serverPort int
+var wordPtr *string
 
 func init() {
+	wordPtr = flag.String("word", "foo", "a string named word")
 	flag.StringVar(&serverIp, "ip", "127.0.0.1", "Set ServerIp(default value is \"127.0.0.1\")")
 	flag.IntVar(&serverPort, "port", 8888, "Set ServerPort(default value is 8888)")
 }
 
 func main() {
 	// parse command-line
+	Testflag()
 	flag.Parse()
+	fmt.Println(flag.Arg(0))
+	fmt.Printf("word = %v\n", *wordPtr)
 	client := NewClient(serverIp, serverPort)
 	// print serverIp and serverPort
 	// fmt.Printf("serverIp is %s, and serverPort is %d\n", serverIp, serverPort)
